@@ -1,0 +1,94 @@
+1. Revolut App Details:
+
+CLient Id: b740724f-3a6e-485c-9260-d80ac764a2ad
+Phone no.: +447284961981
+Passcode: 0000
+JWKS URL: http://darshanbheda-eval-test.apigee.net/deecode/certs
+
+
+2. Useful links:
+
+a. JWT generation, signature and verification - https://jwt.io/
+b. JWK generation - https://mkjwk.org/
+c. Revolut steps followed - https://developer.revolut.com/docs/build-banking-apps/#tutorials-tutorials-get-account-and-transaction-information-5-exchanging-request-token-for-access-token
+
+
+3. Generating Client Credentials Token
+
+curl -k --cert transport.pem --key server.key \
+--location --request POST 'https://sandbox-oba-auth.revolut.com/token' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'grant_type=client_credentials' \
+--data-urlencode 'scope=accounts'
+
+
+{"access_token":"eyJhbGciOiJQUzI1NiJ9.eyJjbGllbnRJZCI6ImI3NDA3MjRmLTNhNmUtNDg1Yy05MjYwLWQ4MGFjNzY0YTJhZCIsInNjb3BlcyI6WyJhY2NvdW50cyJdLCJleHAiOjE2MDc0MzQzOTR9.zLYxDMQomYH20zA4_RbRdvN0vnezCdTjJ6B8epkYKXk7a9g258uuVCtTfMsWSaDzdTkCF_a7FOCscsr33Z7sHPl-rCNmybmajDD0o_RAkVwX84YNN0moWvrvszEqagRHDlsBy8MNXk1Q2imrCVGXlLZ1s45h7gyO93UZCehSvrLCakqkYgqA51GmSpayKlrHSpSEbwpZ5lK4H3LANxLa0CN5KHbP4iK-giUunH9D5_9-3eESElEAerUD9HhWvW0B5-kWk7AQsD6AyLZ8CdRmq6JBxzxFGzuAaxFAlMG881t8IcMcltArEGmloAfEufqpmbCwnt5fwgchT0_OgHEuzg","token_type":"Bearer","expires_in":2399}
+
+
+4. Creating Consent
+
+curl --location --request POST 'https://sandbox-oba.revolut.com/account-access-consents' \
+--header 'x-fapi-financial-id: 001580000103UAvAAM' \
+--header 'Authorization: Bearer eyJhbGciOiJQUzI1NiJ9.eyJjbGllbnRJZCI6ImI3NDA3MjRmLTNhNmUtNDg1Yy05MjYwLWQ4MGFjNzY0YTJhZCIsInNjb3BlcyI6WyJhY2NvdW50cyJdLCJleHAiOjE2MDc0MzQzOTR9.zLYxDMQomYH20zA4_RbRdvN0vnezCdTjJ6B8epkYKXk7a9g258uuVCtTfMsWSaDzdTkCF_a7FOCscsr33Z7sHPl-rCNmybmajDD0o_RAkVwX84YNN0moWvrvszEqagRHDlsBy8MNXk1Q2imrCVGXlLZ1s45h7gyO93UZCehSvrLCakqkYgqA51GmSpayKlrHSpSEbwpZ5lK4H3LANxLa0CN5KHbP4iK-giUunH9D5_9-3eESElEAerUD9HhWvW0B5-kWk7AQsD6AyLZ8CdRmq6JBxzxFGzuAaxFAlMG881t8IcMcltArEGmloAfEufqpmbCwnt5fwgchT0_OgHEuzg' \
+--header 'Content-Type: application/json' \
+--data-raw '
+{
+    "Data": {
+        "Permissions": [
+            "ReadAccountsBasic",
+            "ReadAccountsDetail"
+        ],
+        "ExpirationDateTime": "2020-12-02T00:00:00+00:00",
+        "TransactionFromDateTime": "2020-09-03T00:00:00+00:00",
+        "TransactionToDateTime": "2020-12-03T00:00:00+00:00"
+    },
+    "Risk": {}
+}'
+
+
+
+{"Data":{"Status":"AwaitingAuthorisation","StatusUpdateDateTime":"2020-12-08T12:54:21.919665Z","CreationDateTime":"2020-12-08T12:54:21.919665Z","TransactionToDateTime":"2020-12-03T00:00:00+00:00","ExpirationDateTime":"2020-12-02T00:00:00+00:00","Permissions":["ReadAccountsBasic","ReadAccountsDetail"],"ConsentId":"b9d730ac-9222-4d3f-963a-2e2f25b5a6e2","TransactionFromDateTime":"2020-09-03T00:00:00+00:00"},"Risk":{},"Links":{"Self":"https://sandbox-oba.revolut.com/account-access-consents"},"Meta":{"TotalPages":1}
+
+
+5. JWT Creation
+
+Header:
+{
+  "alg": "PS256",
+  "kid": "deecodesjwk2020"
+}
+
+Payload:
+
+{
+  "response_type": "code id_token",
+  "client_id": "b740724f-3a6e-485c-9260-d80ac764a2ad",
+  "redirect_uri": "http://sampledeecode.com/redirect",
+  "scope": "accounts",
+  "claims": {
+    "id_token": {
+      "openbanking_intent_id": {
+        "value": "b9d730ac-9222-4d3f-963a-2e2f25b5a6e2"
+      }
+    }
+  }
+}
+
+
+
+6. Get Consent from User
+
+https://sandbox-oba.revolut.com/ui/index.html?response_type=code%26id_token&scope=accounts&redirect_uri=http://sampledeecode.com/redirect&client_id=b740724f-3a6e-485c-9260-d80ac764a2ad&request=eyJhbGciOiJQUzI1NiIsImtpZCI6ImRlZWNvZGVzandrMjAyMCJ9.eyJyZXNwb25zZV90eXBlIjoiY29kZSBpZF90b2tlbiIsImNsaWVudF9pZCI6ImI3NDA3MjRmLTNhNmUtNDg1Yy05MjYwLWQ4MGFjNzY0YTJhZCIsInJlZGlyZWN0X3VyaSI6Imh0dHA6Ly9zYW1wbGVkZWVjb2RlLmNvbS9yZWRpcmVjdCIsInNjb3BlIjoiYWNjb3VudHMiLCJjbGFpbXMiOnsiaWRfdG9rZW4iOnsib3BlbmJhbmtpbmdfaW50ZW50X2lkIjp7InZhbHVlIjoiYjlkNzMwYWMtOTIyMi00ZDNmLTk2M2EtMmUyZjI1YjVhNmUyIn19fX0.GElvS8x0nC0m1mYR9w9llJyF_kikOMHyRPqNLZjz96efMU5928jwjrxE0XHTHp8K71kerhHKOH56qx-n3DQONrLHwI4XtMQPqC3D0jS9FVPmriish0sXrOnGlITDPFrZ_tnlKhpJWfBuOtzkYeOv7PovdWegt8DsFwglJJ7r4L4bfWinOpkqISW6dQpiUwi9dLbf2v1HI-Sf83nrCA9fzysLtarbkuUpz_r24o6i_U7XbMRa5at0pjMYLmeG8w5_epheSWdiMlNBopgoPhNWQ9tDfvmvxPWAooDh4LJzAvffomdLSs--lW_qGxmATdCmWIQhzmODWnvGv_7p8jeVsg
+
+7. Exchanging Request token for access token
+http://sampledeecode.com/redirect?code=oa_sand_sUXHYaubnfw_DbcT1SVH8qSQB5186mICTbPbUDN8S0g&id_token=eyJraWQiOiJkcHVFbVg4em5KSnFCcTRndXJIT3k4VGZNUmMiLCJhbGciOiJQUzI1NiJ9.eyJpc3MiOiJodHRwczovL3NhbmRib3gtb2JhLnJldm9sdXQuY29tIiwiaWF0IjoxNjA3NDMzNTc0LCJzdWIiOiJiOWQ3MzBhYy05MjIyLTRkM2YtOTYzYS0yZTJmMjViNWE2ZTIiLCJhY3IiOiJ1cm46b3BlbmJhbmtpbmc6cHNkMjpzY2EiLCJvcGVuYmFua2luZ19pbnRlbnRfaWQiOiJiOWQ3MzBhYy05MjIyLTRkM2YtOTYzYS0yZTJmMjViNWE2ZTIiLCJhdWQiOiJiNzQwNzI0Zi0zYTZlLTQ4NWMtOTI2MC1kODBhYzc2NGEyYWQiLCJub25jZSI6Im51bGwiLCJleHAiOjE2MDc0MzQxNzQsImNfaGFzaCI6ImYtMlg3Nld3YjZRMm1GRDJtalpYWHciLCJzX2hhc2giOiJkQ05PbUtfblNZLTEydkh6YXNMWGlnIn0.GTMQY4RZK5aSKMJep2dHyT5lTJj-8kEYRhPIB5fBDbBP8v1NlagRBIEo8xMyXde8RWIDi_67HxViFeWh2jPMKcpN0CY4Ososy0vX9rto0kg6tcLBjumk_1Xj6eiOdz3UdYk_kVqpfcAuYh2BnImSK4Xt6JsDAg7OEZXcRgTp8N8O41jT337qR83YZipiz-wSntJ1TTTNK5rOrHI-23onhO6iS2744Y9dhnNdQrIAjX9nuUsYtHInJVt50Xtt0aWQaBkzgcUZMJyJgL2VL5203y_qeVthbAs797TTuTe-IS5e4lmiuhVck9wP_h782OU9NwtP6MW-BonRHrK-RQRzTw&state=null
+
+
+curl -k --key server.key --cert transport.pem --location --request POST 'https://sandbox-oba-auth.revolut.com/token' --header 'Content-Type:application/x-www-form-urlencoded' --data-urlencode 'grant_type=authorization_code' --data-urlencode 'code=oa_sand_sUXHYaubnfw_DbcT1SVH8qSQB5186mICTbPbUDN8S0g'
+
+{"access_token":"oa_sand_sxCXkXKDtL7sZjc-ut5GmqZQVWzYsCIbySvWwgv5TMI","token_type":"Bearer","expires_in":7775999,"id_token":"eyJraWQiOiJkcHVFbVg4em5KSnFCcTRndXJIT3k4VGZNUmMiLCJhbGciOiJQUzI1NiJ9.eyJpc3MiOiJodHRwczovL3NhbmRib3gtb2JhLnJldm9sdXQuY29tIiwic3ViIjoiYjlkNzMwYWMtOTIyMi00ZDNmLTk2M2EtMmUyZjI1YjVhNmUyIiwiYXVkIjoiYjc0MDcyNGYtM2E2ZS00ODVjLTkyNjAtZDgwYWM3NjRhMmFkIiwibm9uY2UiOiJudWxsIiwiZXhwIjoxNjA3NDM0MjE5MDg3LCJpYXQiOjE2MDc0MzM2MTl9.HfD82H0-yZY8hkaIAcieESPDdw7AvYbyOzjzIFtKaB-ntrF0_0ZKWXeYvGvLnIu496HWt0hqxv8_fgRh5TQg61XwxpjFwoQtgrZADMmHo7fDdKJGGt6fxVFgvkrQV3ooHT6MzuFyAAZF1-VhlDAj2d1CaH8SrtN8C_lLwHAzserKid9izHXZKJ9-yEdJEZbrEU-Zh-f_2b9gpvwG4bRNC65h2Xrj14j0kkidpiKtYzj5iLmvAbHbzeyY3oTyli4zlUGzCXNuei9aaRSst7gi0bpOyBTTevFICiL0W05dG8mzOVE8js2fwPbGDkJFWI4Ip9Af87IVv7FInZ_CzE480g"}
+
+
+8. Get List of Accounts
+
+curl -X GET https://sandbox-oba.revolut.com/accounts --header 'Authorization: Bearer oa_sand_sxCXkXKDtL7sZjc-ut5GmqZQVWzYsCIbySvWwgv5TMI' --header 'x-fapi-financial-id: 001580000103UAvAAM'
